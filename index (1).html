@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="color-scheme" content="dark light">
+<title>Движение</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600&family=Manrope:wght@400;600;800&family=Nunito:wght@400;600;800&display=swap&subset=cyrillic" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  --accent:#cef99b;--on-accent:#10130f;
+  --bg:#0f1110;--card:#181b19;--text:#eef1ec;--muted:#8b928a;--line:#262a27;--danger:#ff7a7a;
+  --font:'Manrope',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --fs:16px;--gap:14px;--pad:16px;
+  --r:18px;
+}
+[data-theme=brown]{--bg:#1c1512;--card:#261d18;--text:#f1e7dd;--muted:#a08e7f;--line:#372a22}
+[data-theme=gray]{--bg:#17181a;--card:#212327;--text:#e9eaec;--muted:#8e9298;--line:#2e3136}
+[data-theme=light]{--bg:#f4f5f1;--card:#ffffff;--text:#1a1d1a;--muted:#666d65;--line:#e1e4dd;--danger:#c62828;color-scheme:light}
+[data-theme=burgundy]{--bg:#1a0d11;--card:#26141a;--text:#f3e4e7;--muted:#a88b92;--line:#3a1f27}
+[data-theme=navy]{--bg:#0b1220;--card:#131c30;--text:#e6ecf7;--muted:#8592ab;--line:#22304d}
+[data-density=compact]{--gap:8px;--pad:12px}
+[data-density=airy]{--gap:20px;--pad:20px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{font-size:var(--fs)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.45;min-height:100vh;
+  padding-top:env(safe-area-inset-top,0);}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0}
+[data-deco=orbits] body::before{background:
+  repeating-radial-gradient(circle at 105% -5%,transparent 0 46px,color-mix(in srgb,var(--accent) 9%,transparent) 46px 47px)}
+[data-deco=grid] body::before{background:
+  linear-gradient(var(--line) 1px,transparent 1px) 0 0/32px 32px,linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/32px 32px;opacity:.5}
+#app{position:relative;z-index:1;max-width:560px;margin:0 auto;padding:16px 16px calc(96px + env(safe-area-inset-bottom,0))}
+h1{font-size:1.5rem;margin:0;font-weight:800;letter-spacing:-.01em}
+h2{font-size:1.05rem;margin:0;font-weight:800}
+h3{font-size:1rem;margin:0;font-weight:700}
+p{margin:0}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:8px 0 var(--gap)}
+.stack{display:flex;flex-direction:column;gap:var(--gap)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:var(--pad)}
+.row{display:flex;align-items:center;gap:12px}
+.row.between{justify-content:space-between}
+.grow{flex:1;min-width:0}
+.ttl{overflow-wrap:anywhere}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{min-height:44px;padding:0 18px;border-radius:14px;border:1px solid var(--line);background:transparent;font-weight:700}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:transparent}
+.btn.danger{color:var(--danger)}
+.btn.sm{min-height:36px;padding:0 12px;font-size:.9rem}
+.btn:disabled{opacity:.4}
+.ic{width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:transparent;font-size:1.3rem;line-height:1}
+.chk{flex:none;width:44px;height:44px;border-radius:50%;border:2px solid var(--line);background:transparent;display:grid;place-items:center;font-size:1.1rem;color:var(--on-accent)}
+.chk[aria-pressed=true]{background:var(--accent);border-color:var(--accent)}
+.chk::after{content:"";width:10px;height:6px;border-left:2.5px solid currentColor;border-bottom:2.5px solid currentColor;transform:rotate(-45deg) translateY(-1px);opacity:0}
+.chk[aria-pressed=true]::after{opacity:1}
+.item{display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1px solid var(--line)}
+.item:first-child{border-top:0}
+.item .body{flex:1;min-width:0;text-align:left;background:none;border:0;padding:6px 0}
+.done .ttl{text-decoration:line-through;color:var(--muted)}
+.empty{padding:18px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:var(--r)}
+.empty .btn{margin-top:10px}
+/* today ring */
+.hero{display:flex;align-items:center;gap:18px}
+.ring{position:relative;width:132px;height:132px;flex:none}
+.ring svg{transform:rotate(-90deg)}
+.ring .n{position:absolute;inset:0;display:grid;place-items:center;font-size:2rem;font-weight:800}
+.ring .n small{font-size:.9rem;font-weight:600;color:var(--muted)}
+.ring circle{fill:none;stroke-width:10}
+.ring .tr{stroke:var(--line)}
+.ring .pg{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset .5s ease}
+.nomotion .ring .pg{transition:none}
+/* nav */
+nav{position:fixed;left:0;right:0;bottom:0;z-index:5;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(12px);
+  border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0))}
+nav .in{max-width:560px;margin:0 auto;display:flex}
+nav button{flex:1;min-height:48px;background:none;border:0;border-radius:12px;font-size:.78rem;font-weight:700;color:var(--muted);position:relative}
+nav button[aria-current=page]{color:var(--text)}
+nav button[aria-current=page]::after{content:"";position:absolute;left:30%;right:30%;top:0;height:3px;border-radius:3px;background:var(--accent)}
+/* calendar */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:10px}
+.cal b{font-size:.7rem;color:var(--muted);text-align:center;font-weight:600}
+.day{aspect-ratio:1;border-radius:10px;border:1px solid var(--line);background:transparent;font-size:.8rem;padding:0;min-height:34px}
+.day.on{background:var(--accent);color:var(--on-accent);border-color:transparent;font-weight:800}
+.day.now{border-color:var(--accent)}
+.day:disabled{opacity:.3}
+/* bars */
+.bars{display:flex;align-items:flex-end;gap:2px;height:96px;margin-top:10px}
+.bars i{flex:1;background:var(--accent);border-radius:3px 3px 0 0;min-height:2px}
+.bars i.z{background:var(--line)}
+.bars i.f{opacity:.3}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap)}
+.kpi b{display:block;font-size:1.6rem;font-weight:800}
+.bar{height:8px;border-radius:8px;background:var(--line);overflow:hidden;margin-top:8px}
+.bar>i{display:block;height:100%;background:var(--accent)}
+/* focus */
+.clock{font-size:3.6rem;font-weight:800;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:-.02em;padding:8px 0}
+.chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.chip{min-height:44px;min-width:64px;border-radius:22px;border:1px solid var(--line);background:transparent;font-weight:700}
+.chip[aria-pressed=true]{background:var(--accent);color:var(--on-accent);border-color:transparent}
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+/* menu */
+.link{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:52px;background:none;border:0;border-top:1px solid var(--line);padding:0;text-align:left;font-weight:700}
+.link:first-child{border-top:0}
+/* modal */
+#modal{position:fixed;inset:0;z-index:20;display:none;background:rgba(0,0,0,.55);align-items:flex-end;justify-content:center}
+#modal.open{display:flex}
+.sheet{background:var(--card);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;border:1px solid var(--line);padding:16px 16px calc(16px + env(safe-area-inset-bottom,0))}
+.sheet-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.sheet-b{display:flex;flex-direction:column;gap:12px}
+.sheet-f{display:flex;gap:10px;margin-top:16px}
+.sheet-f .primary{flex:1}
+label{display:flex;flex-direction:column;gap:6px;font-size:.85rem;font-weight:700;color:var(--muted)}
+input,select,textarea{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-height:44px;width:100%}
+textarea{min-height:120px;resize:vertical}
+input[type=color]{padding:2px;min-height:44px}
+.err{color:var(--danger);font-size:.9rem;min-height:1.2em}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0));background:var(--text);color:var(--bg);padding:10px 16px;border-radius:14px;font-weight:700;z-index:30;max-width:90%}
+@media (prefers-reduced-motion:reduce){.ring .pg{transition:none}}
+</style>
+</head>
+<body>
+<div id="app"><div id="view"></div></div>
+<nav id="nav" aria-label="Разделы"><div class="in" id="navin"></div></nav>
+<div id="modal"></div>
+<input type="file" id="file" accept="application/json,.json" hidden>
+
+<script>
+'use strict';
+/* ---------- helpers ---------- */
+const tg = window.Telegram && window.Telegram.WebApp;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2, '0');
+const dstr = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const today = () => dstr(new Date());
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const D_RE = /^\d{4}-\d{2}-\d{2}$/, DT_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+const MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const THEMES = [['dark','Тёмная'],['brown','Бурая'],['gray','Серая'],['light','Светлая'],['burgundy','Бордовая'],['navy','Тёмно-синяя'],['telegram','Как в Telegram']];
+const FONTS = {manrope:["Manrope","Manrope"],nunito:["Nunito","Nunito"],lora:["Lora","Lora"]};
+const FONT_STACK = {manrope:"'Manrope',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif",nunito:"'Nunito',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif",lora:"'Lora',Georgia,'Times New Roman',serif"};
+const haptic = (t='light') => { try { tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred(t); } catch(e){} };
+const hapticOk = () => { try { tg && tg.HapticFeedback && tg.HapticFeedback.notificationOccurred('success'); } catch(e){} };
+function fmtDate(s){ if(!D_RE.test(s)) return ''; const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString('ru-RU',{day:'numeric',month:'long'}); }
+function fmtClock(sec){ sec=Math.max(0,Math.round(sec)); return `${pad(Math.floor(sec/60))}:${pad(sec%60)}`; }
+function plural(n,a,b,c){ const m=Math.abs(n)%100,k=m%10; return (m>10&&m<20)?c:k===1?a:(k>1&&k<5)?b:c; }
+
+/* ---------- state ---------- */
+function fresh(){
+  return { version:2, journal:[], habits:[], tasks:[], goals:[], notes:[], sleep:[], sessions:[], timer:null,
+    settings:{ theme:'dark', accent:'#cef99b', font:'manrope', decoration:'orbits', wallpaper:'', motion:true, size:16, density:'comfortable',
+      screens:{today:true,habits:true,focus:true,stats:true}, widgets:{habits:true,tasks:true,sleep:true,goals:true},
+      habitCalendar:true, focusHistory:true, statsSleep:true } };
+}
+function normalize(r){
+  if(!r || typeof r!=='object' || Array.isArray(r)) throw new Error('Файл не похож на данные «Движения».');
+  if(![1,2].includes(r.version)) throw new Error('Неизвестная версия данных: '+esc(r.version));
+  const st = fresh();
+  const str = (v,max=500) => typeof v==='string' ? v.slice(0,max) : '';
+  const id = v => (typeof v==='string' && /^[\w-]{1,64}$/.test(v)) ? v : uid();
+  const arr = k => { const a=r[k]; if(a===undefined) return []; if(!Array.isArray(a)) throw new Error(`Раздел «${k}» повреждён.`); if(a.length>5000) throw new Error(`В разделе «${k}» слишком много записей.`); return a.filter(x=>x&&typeof x==='object'); };
+  const num = (v,def,min,max) => { v=Number(v); return Number.isFinite(v)?Math.min(max,Math.max(min,v)):def; };
+  st.habits = arr('habits').map(h=>({id:id(h.id),title:str(h.title,80)||'Без названия',created:D_RE.test(h.created)?h.created:today(),
+    days:[...new Set((Array.isArray(h.days)?h.days:[]).filter(d=>D_RE.test(d)))].sort()}));
+  st.tasks = arr('tasks').map(t=>({id:id(t.id),title:str(t.title,200)||'Без названия',due:D_RE.test(t.due)?t.due:'',done:!!t.done,doneDate:D_RE.test(t.doneDate)?t.doneDate:''}));
+  st.goals = arr('goals').map(g=>({id:id(g.id),title:str(g.title,100)||'Без названия',unit:str(g.unit,20),target:num(g.target,1,0.0001,1e9),value:num(g.value,0,0,1e9)}));
+  st.notes = arr('notes').map(n=>({id:id(n.id),title:str(n.title,100),body:str(n.body,20000)}));
+  st.journal = arr('journal').map(j=>({id:id(j.id),date:D_RE.test(j.date)?j.date:today(),title:str(j.title,100),body:str(j.body,20000)}));
+  st.sleep = arr('sleep').filter(s=>DT_RE.test(s.start)&&DT_RE.test(s.end)).map(s=>{
+    const h=(new Date(s.end)-new Date(s.start))/36e5;
+    return {id:id(s.id),date:D_RE.test(s.date)?s.date:s.end.slice(0,10),start:s.start,end:s.end,hours:Math.round(num(h,0,0,24)*100)/100,quality:Math.round(num(s.quality,3,1,5))};});
+  st.sessions = arr('sessions').map(s=>({id:id(s.id),date:D_RE.test(s.date)?s.date:today(),seconds:Math.round(num(s.seconds,0,0,86400)),label:str(s.label,60)||'Фокус'}));
+  const t=r.timer;
+  if(t && typeof t==='object' && ['running','paused'].includes(t.status) && Number(t.duration)>0)
+    st.timer={id:id(t.id),duration:num(t.duration,1500,1,86400),remaining:num(t.remaining,0,0,86400),endsAt:num(t.endsAt,0,0,4e12),status:t.status,label:str(t.label,60)||'Фокус'};
+  const s=r.settings&&typeof r.settings==='object'?r.settings:{}, ds=st.settings;
+  if(THEMES.some(x=>x[0]===s.theme)) ds.theme=s.theme;
+  if(typeof s.accent==='string'&&/^#[0-9a-f]{6}$/i.test(s.accent)) ds.accent=s.accent;
+  if(FONTS[s.font]) ds.font=s.font;
+  if(['orbits','grid','none'].includes(s.decoration)) ds.decoration=s.decoration;
+  if([16,18,20].includes(s.size)) ds.size=s.size;
+  if(['compact','comfortable','airy'].includes(s.density)) ds.density=s.density;
+  if(typeof s.motion==='boolean') ds.motion=s.motion;
+  for(const k of ['habitCalendar','focusHistory','statsSleep']) if(typeof s[k]==='boolean') ds[k]=s[k];
+  for(const g of ['screens','widgets']) if(s[g]&&typeof s[g]==='object') for(const k of Object.keys(ds[g])) if(typeof s[g][k]==='boolean') ds[g][k]=s[g][k];
+  return st;
+}
+
+/* ---------- storage: localStorage + Telegram CloudStorage ---------- */
+const LS='ritm-mobile-v1';
+let S, ts=0, syncMsg='';
+function loadLocal(){
+  try{ const raw=localStorage.getItem(LS); ts=Number(localStorage.getItem(LS+'.ts'))||0; if(raw) return normalize(JSON.parse(raw)); }
+  catch(e){ try{ const b=localStorage.getItem(LS+'.backup'); if(b) return normalize(JSON.parse(b)); }catch(_){} }
+  return fresh();
+}
+function saveLocal(){
+  try{
+    const prev=localStorage.getItem(LS);
+    if(prev){ try{ normalize(JSON.parse(prev)); localStorage.setItem(LS+'.backup',prev); }catch(_){} }
+    localStorage.setItem(LS,JSON.stringify(S)); localStorage.setItem(LS+'.ts',String(ts));
+  }catch(e){ syncMsg='Не удалось сохранить на устройстве'; }
+}
+const cloudOk = !!(tg && tg.initData && tg.CloudStorage && tg.isVersionAtLeast && tg.isVersionAtLeast('6.9'));
+const cget = keys => new Promise((res,rej)=>tg.CloudStorage.getItems(keys,(e,v)=>e?rej(new Error(e)):res(v||{})));
+const cset = (k,v) => new Promise((res,rej)=>tg.CloudStorage.setItem(k,v,(e,ok)=>e||!ok?rej(new Error(e||'set failed')):res()));
+const crem = keys => new Promise((res,rej)=>tg.CloudStorage.removeItems(keys,(e)=>e?rej(new Error(e)):res()));
+function splitChunks(txt,size=3500){
+  const out=[]; let i=0;
+  while(i<txt.length){ let end=Math.min(i+size,txt.length); const c=txt.charCodeAt(end-1); if(end<txt.length&&c>=0xD800&&c<=0xDBFF) end--; out.push(txt.slice(i,end)); i=end; }
+  return out;
+}
+let lastN=0, cloudBusy=false, cloudDirty=false, cloudTimer=null;
+async function cloudLoad(){
+  const m=await cget(['d_meta']); if(!m.d_meta) return null;
+  const meta=JSON.parse(m.d_meta); lastN=meta.n;
+  const keys=Array.from({length:meta.n},(_,i)=>'d_'+i); const parts=await cget(keys);
+  return {ts:meta.ts,state:normalize(JSON.parse(keys.map(k=>parts[k]).join('')))};
+}
+async function cloudSave(){
+  const chunks=splitChunks(JSON.stringify(S));
+  if(chunks.length>900) throw new Error('Слишком много данных для Telegram Cloud');
+  for(let i=0;i<chunks.length;i++) await cset('d_'+i,chunks[i]);
+  await cset('d_meta',JSON.stringify({n:chunks.length,ts}));
+  if(lastN>chunks.length) await crem(Array.from({length:lastN-chunks.length},(_,i)=>'d_'+(chunks.length+i)));
+  lastN=chunks.length;
+}
+function scheduleCloud(){
+  if(!cloudOk) return; cloudDirty=true; clearTimeout(cloudTimer);
+  cloudTimer=setTimeout(async()=>{
+    if(cloudBusy){ scheduleCloud(); return; }
+    cloudBusy=true; cloudDirty=false;
+    try{ await cloudSave(); syncMsg='Синхронизировано с Telegram'; }catch(e){ syncMsg='Не синхронизировано: '+e.message; cloudDirty=true; }
+    cloudBusy=false; updateSyncLabel();
+  },700);
+}
+function save(){ ts=Date.now(); saveLocal(); scheduleCloud(); }
+async function pull(){
+  if(!cloudOk) return;
+  try{
+    const c=await cloudLoad();
+    if(c && c.ts>ts && !modal){ S=c.state; ts=c.ts; saveLocal(); syncMsg='Синхронизировано с Telegram'; applyTheme(); render(); }
+    else if(!c || c.ts<ts){ await cloudSave(); syncMsg='Синхронизировано с Telegram'; }
+  }catch(e){ syncMsg='Нет связи с Telegram Cloud'; }
+  updateSyncLabel();
+}
+function updateSyncLabel(){ const el=$('#sync'); if(el) el.textContent=syncText(); }
+function syncText(){ return cloudOk ? (syncMsg||'Telegram Cloud') : 'Данные хранятся только на этом устройстве'; }
+
+/* ---------- theme ---------- */
+function lum(hex){ const n=parseInt(hex.slice(1),16); const c=[n>>16&255,n>>8&255,n&255].map(v=>{v/=255;return v<=.03928?v/12.92:((v+.055)/1.055)**2.4}); return .2126*c[0]+.7152*c[1]+.0722*c[2]; }
+function applyTheme(){
+  const s=S.settings, root=document.documentElement, st=root.style;
+  root.dataset.theme = s.theme==='telegram' ? 'dark' : s.theme;
+  root.dataset.density=s.density; root.dataset.deco=s.decoration;
+  st.setProperty('--accent',s.accent); st.setProperty('--on-accent',lum(s.accent)>.35?'#10130f':'#ffffff');
+  st.setProperty('--font',FONT_STACK[s.font]); st.setProperty('--fs',s.size+'px');
+  document.body.classList.toggle('nomotion',!s.motion);
+  const keys=['--bg','--card','--text','--muted','--line'];
+  if(s.theme==='telegram' && tg && tg.themeParams){
+    const p=tg.themeParams;
+    if(p.bg_color){ st.setProperty('--bg',p.secondary_bg_color||p.bg_color); st.setProperty('--card',p.bg_color); }
+    if(p.text_color) st.setProperty('--text',p.text_color);
+    if(p.hint_color) st.setProperty('--muted',p.hint_color);
+    st.setProperty('--line',p.section_separator_color||'rgba(128,128,128,.25)');
+    root.dataset.theme='tg';
+  } else keys.forEach(k=>st.removeProperty(k));
+  const bg=getComputedStyle(root).getPropertyValue('--bg').trim();
+  try{ if(tg){ tg.setHeaderColor && tg.setHeaderColor(bg); tg.setBackgroundColor && tg.setBackgroundColor(bg); tg.setBottomBarColor && tg.setBottomBarColor(bg); } }catch(e){}
+}
+
+/* ---------- domain ---------- */
+function streaks(days){
+  const set=new Set(days); let cur=0; const d=new Date();
+  if(!set.has(dstr(d))) d.setDate(d.getDate()-1);
+  while(set.has(dstr(d))){ cur++; d.setDate(d.getDate()-1); }
+  let best=0,run=0,prev=null;
+  for(const x of [...set].sort()){
+    if(prev){ const p=new Date(prev+'T00:00'); p.setDate(p.getDate()+1); run=dstr(p)===x?run+1:1; } else run=1;
+    best=Math.max(best,run); prev=x;
+  }
+  return {cur,best};
+}
+function todayTasks(){ const t=today(); return S.tasks.filter(x=>x.done ? (x.doneDate===t||x.due===t) : (!x.due||x.due<=t)); }
+function timerLeft(tm){ return tm.status==='running' ? Math.max(0,Math.round((tm.endsAt-Date.now())/1000)) : tm.remaining; }
+function finishTimer(auto){
+  const tm=S.timer; if(!tm) return;
+  const elapsed = auto ? tm.duration : Math.max(0,tm.duration-timerLeft(tm));
+  if(elapsed>=30) S.sessions.push({id:uid(),date:today(),seconds:Math.round(elapsed),label:tm.label});
+  S.timer=null; save(); if(auto){ hapticOk(); toast('Фокус завершён'); } render();
+}
+function goalPct(g){ return Math.min(100,Math.round(g.value/g.target*100)); }
+
+/* ---------- routing ---------- */
+let R={tab:'today',sub:null}, cal={y:new Date().getFullYear(),m:new Date().getMonth()}, focusMin=25, focusLabel='', modal=null;
+const TABS=[['today','Сегодня'],['habits','Привычки'],['focus','Фокус'],['stats','Статистика'],['more','Ещё']];
+function visibleTabs(){ return TABS.filter(t=>t[0]==='more'||S.settings.screens[t[0]]); }
+function go(tab,sub=null){ R={tab,sub}; render(); window.scrollTo(0,0); }
+function syncBack(){
+  if(!tg||!tg.BackButton) return;
+  (modal||R.sub) ? tg.BackButton.show() : tg.BackButton.hide();
+}
+function goBack(){ if(modal){ closeModal(); } else if(R.sub){ R.sub=null; render(); window.scrollTo(0,0);} }
+
+/* ---------- views ---------- */
+function vToday(){
+  const t=today(), W=S.settings.widgets;
+  const hs=W.habits?S.habits:[], ts_=W.tasks?todayTasks():[];
+  const total=hs.length+ts_.length, done=hs.filter(h=>h.days.includes(t)).length+ts_.filter(x=>x.done).length;
+  const pct=total?Math.round(done/total*100):0, C=2*Math.PI*54;
+  const name=tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user?tg.initDataUnsafe.user.first_name:'';
+  const date=new Date().toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'});
+  let h=`<div class="head"><div><h1>${name?'Привет, '+esc(name):'Сегодня'}</h1><p class="muted">${esc(date)}</p></div></div><div class="stack">`;
+  h+=`<div class="card hero"><div class="ring" role="img" aria-label="Выполнено ${pct}%"><svg width="132" height="132" viewBox="0 0 132 132"><circle class="tr" cx="66" cy="66" r="54"/><circle class="pg" cx="66" cy="66" r="54" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C*(1-pct/100)).toFixed(1)}"/></svg><div class="n">${pct}<small>%</small></div></div>
+    <div><h2>${total?`${done} из ${total}`:'День свободен'}</h2><p class="muted small">${total?'привычек и задач на сегодня':'Добавьте привычку или задачу — они появятся здесь.'}</p></div></div>`;
+  if(W.habits){
+    h+=`<div class="card"><div class="row between"><h2>Привычки</h2><button class="btn sm" data-act="newHabit">Добавить</button></div>`;
+    h+=S.habits.length?S.habits.map(x=>`<div class="item"><button class="chk" data-act="toggleHabit" data-id="${esc(x.id)}" data-date="${t}" aria-pressed="${x.days.includes(t)}" aria-label="Отметить: ${esc(x.title)}"></button><div class="grow ttl">${esc(x.title)}<div class="muted small">серия ${streaks(x.days).cur}</div></div></div>`).join(''):`<div class="empty" style="margin-top:10px">Пока нет привычек</div>`;
+    h+=`</div>`;
+  }
+  if(W.tasks){
+    h+=`<div class="card"><div class="row between"><h2>Задачи</h2><button class="btn sm" data-act="newTask">Добавить</button></div>`;
+    h+=ts_.length?ts_.map(x=>`<div class="item ${x.done?'done':''}"><button class="chk" data-act="toggleTask" data-id="${esc(x.id)}" aria-pressed="${x.done}" aria-label="Выполнить: ${esc(x.title)}"></button><div class="grow ttl">${esc(x.title)}${x.due&&x.due<today()&&!x.done?`<div class="small" style="color:var(--danger)">просрочено · ${fmtDate(x.due)}</div>`:''}</div></div>`).join(''):`<div class="empty" style="margin-top:10px">Задач на сегодня нет</div>`;
+    h+=`</div>`;
+  }
+  if(S.settings.screens.focus){
+    h+=`<div class="card row between"><div><h2>Фокус</h2><p class="muted small">${S.timer?'Таймер идёт: '+fmtClock(timerLeft(S.timer)):'25 минут без отвлечений'}</p></div><button class="btn primary" data-act="${S.timer?'tab':'quickFocus'}" data-t="focus">${S.timer?'Открыть':'Начать'}</button></div>`;
+  }
+  if(W.sleep){
+    const last=[...S.sleep].sort((a,b)=>b.end.localeCompare(a.end))[0];
+    h+=`<div class="card row between"><div><h2>Сон</h2><p class="muted small">${last?`${last.hours.toFixed(1)} ч · качество ${last.quality}/5`:'Записей пока нет'}</p></div><button class="btn" data-act="newSleep">Записать</button></div>`;
+  }
+  if(W.goals && S.goals.length){
+    h+=`<div class="card"><div class="row between"><h2>Цели</h2><button class="btn sm" data-act="sub" data-s="goals">Все</button></div>`+S.goals.slice(0,3).map(g=>`<div style="margin-top:10px"><div class="row between small"><span class="ttl">${esc(g.title)}</span><span class="muted">${goalPct(g)}%</span></div><div class="bar"><i style="width:${goalPct(g)}%"></i></div></div>`).join('')+`</div>`;
+  }
+  return h+`</div>`;
+}
+function calGrid(hb){
+  const {y,m}=cal, off=(new Date(y,m,1).getDay()+6)%7, dim=new Date(y,m+1,0).getDate(), t=today();
+  let c=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(x=>`<b>${x}</b>`).join('')+'<i></i>'.repeat(off);
+  for(let d=1;d<=dim;d++){
+    const ds=`${y}-${pad(m+1)}-${pad(d)}`, on=hb.days.includes(ds);
+    c+=`<button class="day${on?' on':''}${ds===t?' now':''}" ${ds>t?'disabled':''} data-act="toggleHabit" data-id="${esc(hb.id)}" data-date="${ds}" aria-pressed="${on}" aria-label="${d} ${MONTHS[m]}">${d}</button>`;
+  }
+  return `<div class="cal">${c}</div>`;
+}
+function monthNav(){
+  return `<div class="row between" style="margin-bottom:var(--gap)"><button class="ic" data-act="month" data-d="-1" aria-label="Прошлый месяц">‹</button><h2>${MONTHS[cal.m]} ${cal.y}</h2><button class="ic" data-act="month" data-d="1" aria-label="Следующий месяц">›</button></div>`;
+}
+function vHabits(){
+  let h=`<div class="head"><h1>Привычки</h1><button class="btn primary" data-act="newHabit">Добавить</button></div>`;
+  if(!S.habits.length) return h+`<div class="empty">Создайте первую привычку — отмечать её можно одним касанием.<br><button class="btn primary" data-act="newHabit">Создать привычку</button></div>`;
+  h+=monthNav()+`<div class="stack">`;
+  h+=S.habits.map(x=>{ const s=streaks(x.days); return `<div class="card"><div class="row between"><div class="grow ttl"><h3>${esc(x.title)}</h3><p class="muted small">серия ${s.cur} · лучшая ${s.best}</p></div><button class="btn sm" data-act="editHabit" data-id="${esc(x.id)}">Изменить</button></div>${S.settings.habitCalendar?calGrid(x):''}</div>`; }).join('');
+  return h+`</div>`;
+}
+function vFocus(){
+  const tm=S.timer; let h=`<div class="head"><h1>Фокус</h1></div><div class="stack"><div class="card">`;
+  if(tm){
+    h+=`<p class="muted small" style="text-align:center">${esc(tm.label)}</p><div class="clock" id="clock">${fmtClock(timerLeft(tm))}</div><div class="row" style="justify-content:center">
+      ${tm.status==='running'?`<button class="btn" data-act="pause">Пауза</button>`:`<button class="btn primary" data-act="resume">Продолжить</button>`}
+      <button class="btn danger" data-act="stopFocus">Завершить</button></div>`;
+  } else {
+    h+=`<div class="clock">${fmtClock(focusMin*60)}</div><div class="chips" role="group" aria-label="Длительность">${[15,25,45,60].map(m=>`<button class="chip" data-act="setMin" data-m="${m}" aria-pressed="${m===focusMin}">${m} мин</button>`).join('')}</div>
+      <label style="margin:14px 0">Название<input id="focusLabel" maxlength="60" placeholder="Фокус" value="${esc(focusLabel)}"></label><button class="btn primary" style="width:100%" data-act="startFocus">Начать</button>`;
+  }
+  h+=`</div>`;
+  if(S.settings.focusHistory){
+    const list=[...S.sessions].reverse().slice(0,20);
+    h+=`<div class="card"><h2>История</h2>`+(list.length?list.map(s=>`<div class="item"><div class="grow ttl">${esc(s.label)}<div class="muted small">${fmtDate(s.date)}</div></div><b>${Math.round(s.seconds/60)} мин</b></div>`).join(''):`<p class="muted small" style="margin-top:8px">Завершённые сессии появятся здесь.</p>`)+`</div>`;
+  }
+  return h+`</div>`;
+}
+function vStats(){
+  const {y,m}=cal, dim=new Date(y,m+1,0).getDate(), t=today(), pre=`${y}-${pad(m+1)}`;
+  let bars='';
+  for(let d=1;d<=dim;d++){
+    const ds=`${pre}-${pad(d)}`, n=S.habits.filter(x=>x.days.includes(ds)).length, p=S.habits.length?n/S.habits.length:0;
+    bars+=`<i class="${n?'':'z'} ${ds>t?'f':''}" style="height:${Math.max(2,Math.round(p*100))}%" title="${d}: ${n}"></i>`;
+  }
+  const marks=S.habits.reduce((a,x)=>a+x.days.filter(d=>d.startsWith(pre)).length,0);
+  const sess=S.sessions.filter(s=>s.date.startsWith(pre)), mins=Math.round(sess.reduce((a,s)=>a+s.seconds,0)/60);
+  const sl=S.sleep.filter(s=>s.date.startsWith(pre)), avg=sl.length?sl.reduce((a,s)=>a+s.hours,0)/sl.length:0;
+  const tasksDone=S.tasks.filter(x=>x.done&&(x.doneDate||x.due).startsWith(pre)).length;
+  let h=`<div class="head"><h1>Статистика</h1></div>${monthNav()}<div class="stack">
+    <div class="card"><h2>Привычки по дням</h2><div class="bars" role="img" aria-label="График отметок привычек по дням месяца">${bars}</div><p class="muted small" style="margin-top:8px">Всего отметок за месяц: ${marks}</p></div>
+    <div class="kpis"><div class="card kpi"><b>${mins}</b><span class="muted small">минут фокуса · ${sess.length} ${plural(sess.length,'сессия','сессии','сессий')}</span></div>
+    <div class="card kpi"><b>${tasksDone}</b><span class="muted small">${plural(tasksDone,'задача выполнена','задачи выполнено','задач выполнено')}</span></div>
+    ${S.settings.statsSleep?`<div class="card kpi"><b>${avg?avg.toFixed(1):'—'}</b><span class="muted small">часов сна в среднем</span></div>`:''}
+    <div class="card kpi"><b>${Math.max(0,...S.habits.map(x=>streaks(x.days).best))}</b><span class="muted small">лучшая серия</span></div></div>`;
+  if(S.habits.length) h+=`<div class="card"><h2>Серии</h2>`+S.habits.map(x=>{const s=streaks(x.days);return `<div class="item"><div class="grow ttl">${esc(x.title)}</div><span class="muted small">сейчас ${s.cur} · лучшая ${s.best}</span></div>`;}).join('')+`</div>`;
+  return h+`</div>`;
+}
+function vMore(){
+  if(R.sub) return {tasks:vTasks,goals:vGoals,notes:vNotes,sleep:vSleep,journal:vJournal,settings:vSettings}[R.sub]();
+  const L=[['tasks','Задачи',S.tasks.filter(x=>!x.done).length+' активных'],['goals','Цели',S.goals.length],['notes','Заметки',S.notes.length],['sleep','Сон',S.sleep.length],['journal','Дневник',S.journal.length],['settings','Настройки','']];
+  return `<div class="head"><h1>Ещё</h1></div><div class="card">${L.map(l=>`<button class="link" data-act="sub" data-s="${l[0]}"><span>${l[1]}</span><span class="muted small">${l[2]}</span></button>`).join('')}</div>`;
+}
+const subHead=(t,act)=>`<div class="head"><h1>${t}</h1>${act?`<button class="btn primary" data-act="${act}">Добавить</button>`:''}</div>`;
+const emptyBox=(txt,act)=>`<div class="empty">${txt}<br><button class="btn primary" data-act="${act}">Добавить</button></div>`;
+function vTasks(){
+  const l=[...S.tasks].sort((a,b)=>a.done-b.done||(a.due||'9').localeCompare(b.due||'9'));
+  return subHead('Задачи','newTask')+(l.length?`<div class="card">${l.map(x=>`<div class="item ${x.done?'done':''}"><button class="chk" data-act="toggleTask" data-id="${esc(x.id)}" aria-pressed="${x.done}" aria-label="Выполнить: ${esc(x.title)}"></button><button class="body" data-act="editTask" data-id="${esc(x.id)}"><span class="ttl">${esc(x.title)}</span>${x.due?`<div class="muted small">до ${fmtDate(x.due)}</div>`:''}</button></div>`).join('')}</div>`:emptyBox('Задач пока нет','newTask'));
+}
+function vGoals(){
+  return subHead('Цели','newGoal')+(S.goals.length?`<div class="stack">${S.goals.map(g=>`<div class="card"><div class="row between"><button class="body" style="background:none;border:0;padding:0;text-align:left" data-act="editGoal" data-id="${esc(g.id)}"><h3 class="ttl">${esc(g.title)}</h3><p class="muted small">${g.value} из ${g.target} ${esc(g.unit)}</p></button><button class="btn sm" data-act="goalInc" data-id="${esc(g.id)}">+1</button></div><div class="bar"><i style="width:${goalPct(g)}%"></i></div></div>`).join('')}</div>`:emptyBox('Поставьте первую цель','newGoal'));
+}
+function vNotes(){
+  return subHead('Заметки','newNote')+(S.notes.length?`<div class="stack">${S.notes.map(n=>`<button class="card" style="text-align:left;width:100%" data-act="editNote" data-id="${esc(n.id)}"><h3 class="ttl">${esc(n.title||'Без названия')}</h3><p class="muted small ttl" style="white-space:pre-wrap">${esc(n.body.slice(0,160))}</p></button>`).join('')}</div>`:emptyBox('Заметок пока нет','newNote'));
+}
+function vJournal(){
+  const l=[...S.journal].sort((a,b)=>b.date.localeCompare(a.date));
+  return subHead('Дневник','newJournal')+(l.length?`<div class="stack">${l.map(n=>`<button class="card" style="text-align:left;width:100%" data-act="editJournal" data-id="${esc(n.id)}"><p class="muted small">${fmtDate(n.date)}</p><h3 class="ttl">${esc(n.title||'Без названия')}</h3><p class="muted small ttl" style="white-space:pre-wrap">${esc(n.body.slice(0,160))}</p></button>`).join('')}</div>`:emptyBox('Запишите, как прошёл день','newJournal'));
+}
+function vSleep(){
+  const l=[...S.sleep].sort((a,b)=>b.end.localeCompare(a.end));
+  return subHead('Сон','newSleep')+(l.length?`<div class="card">${l.map(s=>`<button class="item link" style="border-top:1px solid var(--line)" data-act="editSleep" data-id="${esc(s.id)}"><span>${fmtDate(s.date)}<span class="muted small"> · ${s.start.slice(11)}–${s.end.slice(11)}</span></span><span><b>${s.hours.toFixed(1)} ч</b> <span class="muted small">${s.quality}/5</span></span></button>`).join('')}</div>`:emptyBox('Записей о сне пока нет','newSleep'));
+}
+function vSettings(){
+  const s=S.settings;
+  const seg=(k,opts)=>`<div class="seg">${opts.map(o=>`<button class="chip" data-act="set" data-k="${k}" data-v="${esc(o[0])}" aria-pressed="${String(s[k])===String(o[0])}">${esc(o[1])}</button>`).join('')}</div>`;
+  const tog=(p,l)=>{const [a,b]=p.split('.'); const v=b?s[a][b]:s[a]; return `<div class="item"><span class="grow">${l}</span><button class="chip" data-act="tog" data-p="${p}" aria-pressed="${v}">${v?'Вкл':'Выкл'}</button></div>`;};
+  return `<div class="head"><h1>Настройки</h1></div><div class="stack">
+  <div class="card stack"><h2>Оформление</h2><div>${seg('theme',THEMES)}</div>
+    <label>Акцентный цвет<input type="color" data-input="accent" value="${esc(s.accent)}"></label>
+    <div><p class="muted small" style="margin-bottom:6px">Шрифт</p>${seg('font',Object.entries(FONTS).map(([k,v])=>[k,v[0]]))}</div>
+    <div><p class="muted small" style="margin-bottom:6px">Размер текста</p>${seg('size',[[16,'16'],[18,'18'],[20,'20']])}</div>
+    <div><p class="muted small" style="margin-bottom:6px">Плотность</p>${seg('density',[['compact','Компактно'],['comfortable','Обычно'],['airy','Свободно']])}</div>
+    <div><p class="muted small" style="margin-bottom:6px">Фон</p>${seg('decoration',[['orbits','Орбиты'],['grid','Сетка'],['none','Без фона']])}</div>
+    ${tog('motion','Анимации')}</div>
+  <div class="card"><h2>Разделы</h2>${tog('screens.today','Экран «Сегодня»')}${tog('screens.habits','Экран «Привычки»')}${tog('screens.focus','Экран «Фокус»')}${tog('screens.stats','Экран «Статистика»')}</div>
+  <div class="card"><h2>Блоки</h2>${tog('widgets.habits','Привычки на главной')}${tog('widgets.tasks','Задачи на главной')}${tog('widgets.sleep','Сон на главной')}${tog('widgets.goals','Цели на главной')}${tog('habitCalendar','Календарь привычек')}${tog('focusHistory','История фокуса')}${tog('statsSleep','Сон в статистике')}</div>
+  <div class="card stack"><h2>Данные</h2><p class="muted small" id="sync">${esc(syncText())}</p>
+    <button class="btn" data-act="export">Экспорт JSON</button><button class="btn" data-act="import">Импорт JSON</button><button class="btn danger" data-act="wipe">Стереть все данные</button></div></div>`;
+}
+
+/* ---------- render ---------- */
+function render(){
+  if(!visibleTabs().some(t=>t[0]===R.tab)) R.tab='more';
+  const v={today:vToday,habits:vHabits,focus:vFocus,stats:vStats,more:vMore}[R.tab];
+  $('#view').innerHTML=v();
+  $('#navin').innerHTML=visibleTabs().map(t=>`<button data-act="tab" data-t="${t[0]}" ${R.tab===t[0]?'aria-current="page"':''}>${t[1]}</button>`).join('');
+  syncBack();
+}
+let toastT;
+function toast(msg){ let el=$('.toast'); if(el) el.remove(); el=document.createElement('div'); el.className='toast'; el.setAttribute('role','status'); el.textContent=msg; document.body.appendChild(el); clearTimeout(toastT); toastT=setTimeout(()=>el.remove(),2400); }
+function confirmDlg(msg,cb){ if(tg&&tg.showConfirm&&tg.isVersionAtLeast&&tg.isVersionAtLeast('6.2')) tg.showConfirm(msg,ok=>ok&&cb()); else if(confirm(msg)) cb(); }
+
+/* ---------- modal / forms ---------- */
+function openForm(cfg){ modal=cfg; renderModal(); }
+function closeModal(){ modal=null; renderModal(); }
+function renderModal(){
+  const m=$('#modal');
+  if(!modal){ m.className=''; m.innerHTML=''; syncBack(); return; }
+  const f=modal.fields||[], v=modal.values||{};
+  const body=modal.html || f.map(x=>{
+    const val=v[x.k]??'', a=`id="f_${x.k}" ${x.req?'required':''} ${x.ph?`placeholder="${esc(x.ph)}"`:''} ${x.max?`maxlength="${x.max}"`:''}`;
+    let inp;
+    if(x.type==='textarea') inp=`<textarea ${a}>${esc(val)}</textarea>`;
+    else if(x.type==='select') inp=`<select ${a}>${x.opts.map(o=>`<option value="${esc(o[0])}" ${String(o[0])===String(val)?'selected':''}>${esc(o[1])}</option>`).join('')}</select>`;
+    else inp=`<input ${a} type="${x.type||'text'}" value="${esc(val)}" ${x.step?`step="${x.step}"`:''} ${x.min!==undefined?`min="${x.min}"`:''}>`;
+    return `<label>${esc(x.label)}${inp}</label>`;
+  }).join('');
+  m.className='open';
+  m.innerHTML=`<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(modal.title)}"><div class="sheet-h"><h2>${esc(modal.title)}</h2><button class="ic" data-act="closeModal" aria-label="Закрыть">×</button></div>
+    <div class="sheet-b">${body}<div class="err" id="err" role="alert"></div></div>
+    ${modal.html?'':`<div class="sheet-f">${modal.onDelete?`<button class="btn danger" data-act="delModal">Удалить</button>`:''}<button class="btn primary" data-act="saveModal">Сохранить</button></div>`}</div>`;
+  const first=m.querySelector('input,textarea,select'); if(first&&!modal.values?.id&&!modal.html&&first.type!=='datetime-local') setTimeout(()=>first.focus(),50);
+  syncBack();
+}
+function readForm(){
+  const out={};
+  for(const x of modal.fields){
+    const el=$('#f_'+x.k); let v=el.value.trim?el.value.trim():el.value;
+    if(x.req&&!v) return {err:`Заполните поле «${x.label}»`};
+    if(x.type==='number'){ v=Number(v); if(!Number.isFinite(v)||(x.min!==undefined&&v<x.min)) return {err:`Проверьте поле «${x.label}»`}; }
+    out[x.k]=v;
+  }
+  return {out};
+}
+function upsert(arr,id,obj){ const i=arr.findIndex(x=>x.id===id); if(i>=0) arr[i]={...arr[i],...obj}; else arr.push({id:uid(),...obj}); }
+function crud(arrKey,title,fields,id,defaults,extra){
+  const item=id?S[arrKey].find(x=>x.id===id):null;
+  openForm({title:(item?'Изменить: ':'Новая ')+title.toLowerCase(),fields,values:item||defaults||{},
+    onSave:o=>{ const bad=extra&&extra(o); if(bad) return bad; upsert(S[arrKey],id,o); save(); },
+    onDelete:item?()=>{ S[arrKey]=S[arrKey].filter(x=>x.id!==id); save(); }:null});
+}
+const F={
+  habit:[{k:'title',label:'Название',req:1,max:80,ph:'Например, зарядка'}],
+  task:[{k:'title',label:'Что сделать',req:1,max:200},{k:'due',label:'Срок',type:'date'}],
+  goal:[{k:'title',label:'Цель',req:1,max:100},{k:'unit',label:'Единица',max:20,ph:'раз, км, книг'},{k:'target',label:'Сколько нужно',type:'number',min:0.0001,step:'any',req:1},{k:'value',label:'Сейчас',type:'number',min:0,step:'any',req:1}],
+  note:[{k:'title',label:'Заголовок',max:100},{k:'body',label:'Текст',type:'textarea',max:20000}],
+  journal:[{k:'date',label:'Дата',type:'date',req:1},{k:'title',label:'Заголовок',max:100},{k:'body',label:'Запись',type:'textarea',max:20000}],
+  sleep:[{k:'start',label:'Уснул(а)',type:'datetime-local',req:1},{k:'end',label:'Проснул(ась)',type:'datetime-local',req:1},{k:'quality',label:'Качество',type:'select',opts:[[1,'1 — плохо'],[2,'2'],[3,'3'],[4,'4'],[5,'5 — отлично']]}]
+};
+function sleepDefaults(){ const d=new Date(); const y=new Date(d); y.setDate(y.getDate()-1); return {start:dstr(y)+'T23:00',end:dstr(d)+'T07:00',quality:4}; }
+function sleepCheck(o){
+  const h=(new Date(o.end)-new Date(o.start))/36e5;
+  if(!(h>0)) return 'Время пробуждения должно быть позже времени засыпания';
+  if(h>24) return 'Сон не может быть длиннее 24 часов';
+  o.hours=Math.round(h*100)/100; o.date=o.end.slice(0,10); o.quality=Number(o.quality);
+}
+
+/* ---------- actions ---------- */
+const A={
+  tab:d=>go(d.t), sub:d=>{ R={tab:'more',sub:d.s}; render(); window.scrollTo(0,0); },
+  closeModal, month:d=>{ cal.m+=Number(d.d); if(cal.m<0){cal.m=11;cal.y--;} if(cal.m>11){cal.m=0;cal.y++;} render(); },
+  toggleHabit:d=>{ const h=S.habits.find(x=>x.id===d.id); if(!h||!D_RE.test(d.date)||d.date>today()) return;
+    const i=h.days.indexOf(d.date); if(i>=0) h.days.splice(i,1); else { h.days.push(d.date); h.days.sort(); hapticOk(); } haptic(); save(); render(); },
+  toggleTask:d=>{ const t=S.tasks.find(x=>x.id===d.id); if(!t) return; t.done=!t.done; t.doneDate=t.done?today():''; t.done?hapticOk():haptic(); save(); render(); },
+  newHabit:()=>crud('habits','Привычка',F.habit,null,{},o=>{o.created=today();o.days=[];}),
+  editHabit:d=>crud('habits','Привычка',F.habit,d.id),
+  newTask:()=>crud('tasks','Задача',F.task,null,{},o=>{o.done=false;o.doneDate='';}), editTask:d=>crud('tasks','Задача',F.task,d.id),
+  newGoal:()=>crud('goals','Цель',F.goal,null,{target:10,value:0,unit:'раз'}), editGoal:d=>crud('goals','Цель',F.goal,d.id),
+  goalInc:d=>{ const g=S.goals.find(x=>x.id===d.id); if(g){ g.value=Math.round((g.value+1)*1e6)/1e6; haptic(); save(); render(); } },
+  newNote:()=>crud('notes','Заметка',F.note), editNote:d=>crud('notes','Заметка',F.note,d.id),
+  newJournal:()=>crud('journal','Запись',F.journal,null,{date:today()}), editJournal:d=>crud('journal','Запись',F.journal,d.id),
+  newSleep:()=>crud('sleep','Запись о сне',F.sleep,null,sleepDefaults(),sleepCheck), editSleep:d=>crud('sleep','Запись о сне',F.sleep,d.id,null,sleepCheck),
+  saveModal:()=>{ const r=readForm(); if(r.err){ $('#err').textContent=r.err; return; } const bad=modal.onSave(r.out); if(bad){ $('#err').textContent=bad; return; } haptic(); closeModal(); render(); },
+  delModal:()=>confirmDlg('Удалить запись?',()=>{ modal.onDelete(); closeModal(); render(); }),
+  setMin:d=>{ focusLabel=($('#focusLabel')||{}).value||focusLabel; focusMin=Number(d.m); render(); },
+  startFocus:()=>{ const l=(($('#focusLabel')||{}).value||'').trim()||'Фокус'; startTimer(focusMin,l); },
+  quickFocus:()=>{ startTimer(25,'Фокус'); go('focus'); },
+  pause:()=>{ const t=S.timer; if(!t) return; t.remaining=timerLeft(t); t.status='paused'; t.endsAt=0; save(); render(); },
+  resume:()=>{ const t=S.timer; if(!t) return; t.endsAt=Date.now()+t.remaining*1000; t.status='running'; save(); render(); },
+  stopFocus:()=>confirmDlg('Завершить сессию? Пройденное время сохранится.',()=>finishTimer(false)),
+  set:d=>{ const k=d.k; let v=d.v; if(k==='size') v=Number(v); S.settings[k]=v; save(); applyTheme(); render(); },
+  tog:d=>{ const [a,b]=d.p.split('.'); if(b) S.settings[a][b]=!S.settings[a][b]; else S.settings[a]=!S.settings[a]; save(); applyTheme(); render(); },
+  export:()=>{ const txt=JSON.stringify(S,null,2); modal={title:'Экспорт данных',html:`<label>Резервная копия (JSON)<textarea id="exp" readonly style="min-height:200px">${esc(txt)}</textarea></label><div class="row"><button class="btn primary grow" data-act="copyExp">Копировать</button><button class="btn grow" data-act="dlExp">Скачать файл</button></div>`}; renderModal(); },
+  copyExp:async()=>{ const el=$('#exp'); try{ await navigator.clipboard.writeText(el.value); toast('Скопировано'); }catch(e){ el.select(); document.execCommand('copy'); toast('Скопировано'); } },
+  dlExp:()=>{ const b=new Blob([$('#exp').value],{type:'application/json'}), a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=`dvizhenie-${today()}.json`; document.body.appendChild(a); a.click(); a.remove(); },
+  import:()=>$('#file').click(),
+  wipe:()=>confirmDlg('Удалить все данные без возможности восстановления? Сначала сделайте экспорт.',()=>{ S=fresh(); S.settings=S.settings; save(); applyTheme(); R={tab:'today',sub:null}; render(); toast('Данные удалены'); })
+};
+function startTimer(min,label){
+  S.timer={id:uid(),duration:min*60,remaining:min*60,endsAt:Date.now()+min*60000,status:'running',label}; haptic('medium'); save(); render();
+}
+document.addEventListener('click',e=>{ const el=e.target.closest('[data-act]'); if(!el||!A[el.dataset.act]) return; A[el.dataset.act](el.dataset); });
+document.addEventListener('input',e=>{ if(e.target.dataset&&e.target.dataset.input==='accent'){ S.settings.accent=e.target.value; applyTheme(); } });
+document.addEventListener('change',e=>{ if(e.target.dataset&&e.target.dataset.input==='accent') save(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&modal) closeModal(); });
+$('#file').addEventListener('change',async e=>{
+  const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  try{
+    if(f.size>5e6) throw new Error('Файл слишком большой.');
+    const n=normalize(JSON.parse(await f.text()));
+    confirmDlg(`Заменить текущие данные импортированными? Привычек: ${n.habits.length}, задач: ${n.tasks.length}.`,()=>{ S=n; save(); applyTheme(); R={tab:'today',sub:null}; render(); toast('Данные импортированы'); });
+  }catch(err){ toast(err.message.includes('JSON')?'Файл не является корректным JSON':err.message); }
+});
+
+/* ---------- timer tick ---------- */
+setInterval(()=>{
+  const t=S&&S.timer; if(!t||t.status!=='running') return;
+  const left=timerLeft(t); const c=$('#clock'); if(c) c.textContent=fmtClock(left);
+  if(left<=0) finishTimer(true);
+},500);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden){ if(S.timer&&S.timer.status==='running'&&timerLeft(S.timer)<=0) finishTimer(true); else if(S.timer) render(); pull(); } });
+
+/* ---------- boot ---------- */
+S=loadLocal(); applyTheme(); render();
+if(tg){
+  tg.ready(); tg.expand();
+  try{ tg.disableVerticalSwipes && tg.disableVerticalSwipes(); }catch(e){}
+  if(tg.BackButton) tg.BackButton.onClick(goBack);
+  tg.onEvent && tg.onEvent('themeChanged',()=>{ applyTheme(); });
+}
+pull();
+if(S.timer&&S.timer.status==='running'&&timerLeft(S.timer)<=0) finishTimer(true);
+</script>
+</body>
+</html>
